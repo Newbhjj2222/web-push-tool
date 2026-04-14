@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Send Notification</h2>
+
+<input id="title" placeholder="Title">
+<input id="body" placeholder="Body">
+
+<button onclick="send()">Send</button>
+
+<p id="result"></p>
+
+</div>
+
+<script>
+async function send() {
+  const title = document.getElementById("title").value;
+  const body = document.getElementById("body").value;
+
+  const res = await fetch("/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title, body })
+  });
+
+  const data = await res.json();
+
+  document.getElementById("result").innerText =
+    `Success: ${data.success}, Failed: ${data.failed}`;
+}
+</script>
+
+</body>
+</html>
