@@ -1,30 +1,88 @@
 <!DOCTYPE html>
-<html>
-<body>
-<button onclick="subscribe()">Enable Notifications</button>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Web Push Tool</title>
+</head>
 
-<script>
-async function subscribe() {
-  const registration = await navigator.serviceWorker.register('sw.js');
+<body style="font-family: Arial; padding: 20px;">
 
-  const permission = await Notification.requestPermission();
-  if (permission !== 'granted') return;
+  <h2>Web Push Notification Tool 🚀</h2>
 
-  const subscription = await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: "BHJI8eiwtKURDvHYBUqXSyi-uaZfrY5VNGFN7Gt9rVPudUiufN7_xJoOTEfUkTAHkGmgniaUv31r6th2imHbqB0"
-  });
+  <button onclick="subscribe()">Enable Notifications</button>
 
-  await fetch('http://localhost:3000/subscribe', {
-    method: 'POST',
-    body: JSON.stringify(subscription),
-    headers: {
-      'Content-Type': 'application/json'
+  <p id="status"></p>
+
+  <script>
+    // =========================
+    // Convert VAPID key helper
+    // =========================
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding)
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+
+      const rawData = atob(base64);
+      return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
     }
-  });
 
-  alert("Subscribed!");
-}
-</script>
+    // =========================
+    // Subscribe function
+    // =========================
+    async function subscribe() {
+      const status = document.getElementById("status");
+
+      try {
+        // Check support
+        if (!('serviceWorker' in navigator)) {
+          status.innerText = "Service Worker ntabwo ishyigikiwe";
+          return;
+        }
+
+        // Register service worker
+        const registration = await navigator.serviceWorker.register('/sw.js');
+
+        // Ask permission
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          status.innerText = "Permission yanze";
+          return;
+        }
+
+        // Convert PUBLIC KEY (yawe)
+        const convertedKey = urlBase64ToUint8Array(
+          "BHJI8eiwtKURDvHYBUqXSyi-uaZfrY5VNGFN7Gt9rVPudUiufN7_xJoOTEfUkTAHkGmgniaUv31r6th2imHbqB0"
+        );
+
+        // Create subscription
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: convertedKey
+        });
+
+        // Send subscription to backend
+        const response = await fetch('http://localhost:3000/subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(subscription)
+        });
+
+        if (response.ok) {
+          status.innerText = "Subscribed successfully 🔥";
+        } else {
+          status.innerText = "Server error";
+        }
+
+      } catch (err) {
+        console.log(err);
+        status.innerText = "Error occurred (check console)";
+      }
+    }
+  </script>
+
 </body>
 </html>
